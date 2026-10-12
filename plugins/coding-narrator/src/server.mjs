@@ -10,7 +10,7 @@ import { LocalVoices, localPlayback } from './local-voices.mjs';
 let dashboard;
 let narrator;
 let mcp;
-const worker = new WindowsWorker();
+const worker = new WindowsWorker({ onStateChange: () => narrator?.changed() });
 const local = new LocalVoices();
 let shuttingDown = false;
 async function shutdown() {
@@ -40,7 +40,7 @@ try {
       playback = worker.run({ action: 'play', audio: result.audio.toString('base64') });
       return playback.done;
     });
-    return { done, cancel: () => { abort.abort(); playback?.cancel(); } };
+    return { done, get phase() { return playback?.phase ?? 'generating'; }, cancel: () => { abort.abort(); playback?.cancel(); } };
   };
   narrator = new Narrator({ voices, providers: {
     windows: { name: 'Windows · offline', voices, available: true, run: worker.run },
@@ -60,7 +60,7 @@ try {
   if (process.argv.includes('--demo')) {
     process.stdout.write(`${JSON.stringify({ controlPanelUrl: dashboard.url })}\n`);
   } else {
-    mcp = new McpServer({ name: 'coding-narrator', version: '0.2.3' }, {
+    mcp = new McpServer({ name: 'coding-narrator', version: '0.2.4' }, {
       instructions: 'Use speech only when requested. Speak concise user-facing coding progress, never hidden reasoning, credentials, private URLs or raw file content. Queued audio is not proof that the user heard it.',
     });
     mcp.registerTool('speak_update', {

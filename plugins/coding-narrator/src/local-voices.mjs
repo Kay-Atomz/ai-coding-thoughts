@@ -183,6 +183,6 @@ export function localPlayback(generator, player, changed = () => {}) {
       playback = player.run({ action: 'play', audio: result.audio.toString('base64') });
       return playback.done;
     });
-    return { done, get phase() { return phase; }, cancel: () => { cancelled = true; generation.cancel(); playback?.cancel(); } };
+    return { done, get phase() { return playback?.phase ?? phase; }, cancel: () => { cancelled = true; generation.cancel(); playback?.cancel(); } };
   };
 }

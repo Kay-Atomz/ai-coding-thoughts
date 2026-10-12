@@ -1,10 +1,11 @@
-# Coding Narrator 0.2.3
+# Coding Narrator 0.2.4
 
 Hear short coding progress updates in your preferred speaking style. A small mint dock provides mute, stop and live speech animation. The settings button expands voice controls and speaking skills. Narration is opt-in: the agent composes safe progress summaries and sends them to the tool. It does not expose private internal reasoning or automatically intercept every message.
 
 ## Included
 
 - Local Windows voices work offline. One reusable speech worker avoids launching PowerShell for each update. Live status uses server-sent events instead of polling.
+- A shared Windows playback turn prevents overlapping speech across agent sessions and voice providers on this user's desktop. Waiting sessions show their status and remain cancellable.
 - Optional offline model voices: Kokoro Heart and Bella, Kitten Nano Bruno, and Piper LJ Speech. One Python worker keeps the selected engine warm; no API key is needed. See [local voice setup](docs/LOCAL-VOICES.md).
 - Natural AI voice adapter with Marin and Cedar, cancellation and bounded generation. Requires server-side OpenAI API access and incurs API usage; disabled when access is absent.
 - Clear, Caveman and Teacher presets, custom preferences, and SKILL.md import/export. The agent applies the selected instructions to future narration. Imported preferences do not execute code or grant permissions.
@@ -87,7 +88,7 @@ Use your actual HTTPS `/mcp` endpoint. The hosted player returns a generated cli
 | `stop_narration` | Cancel speech and clear queue | Use the player Stop control |
 | `show_narrator` | Control URL is returned by status | Open the embedded player |
 
-Local speech queues at most five pending updates plus the current job. Full queues are reported; mute cancels queued audio. Each update keeps its submitted voice settings. Switching providers cancels pending updates, so queued offline text cannot be redirected to a cloud voice. The current job continues with its submitted provider until completion or Stop. Use local narration in one chat at a time because separate processes can overlap. Completion cannot establish whether someone physically heard it.
+Local speech queues at most five pending updates plus the current job per session. Full queues are reported; mute cancels queued audio. Each update keeps its submitted voice settings. Switching providers cancels pending updates, so queued offline text cannot be redirected to a cloud voice. The current job continues with its submitted provider until completion or Stop. Version 0.2.4 coordinates actual playback across updated narrator processes in the same user's Windows logon session, including Windows, installed model voices and locally played OpenAI audio. Model generation can run in parallel. Stop/Mute affect only that agent's work. Restart older narrator processes when updating; they do not contain the shared lock. This does not coordinate hosted browser players or audio from unrelated apps. See [coordination details](docs/PLAYBACK-COORDINATION.md). Completion cannot establish whether someone physically heard it.
 
 The four selected open-source voices are available after the optional model installation. See [setup and voice names](docs/LOCAL-VOICES.md), [research and licenses](docs/OPEN-SOURCE-VOICES.md), and [comparison clips](docs/VOICE-TRIAL.md).
 

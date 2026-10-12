@@ -29,6 +29,8 @@ Ask an agent with Coding Narrator loaded:
 
 Use only names returned by the current status. Codex and Claude Code use the same MCP interface. Existing chats retain their loaded tool schema; begin a new chat to load the installed release. The optional background trigger helper also accepts this offline provider and pins the provider at submission to prevent rerouting.
 
+Kokoro Heart is the default for a new local runtime when its files/modules are discovered. Without Heart installed, Windows remains the offline default; no cloud provider is chosen automatically. User selection can override the default for that process. Across updated local agent sessions, prepared audio waits for a shared playback turn before it reaches the speakers. See [coordination](PLAYBACK-COORDINATION.md).
+
 ## Performance and controls
 
 The first clip needs model loading. The dock shows **Preparing voice…** before device playback. A single Python worker keeps one engine warm; switching between Heart and Bella reuses Kokoro, while switching engines releases the previous model. All three engines use four CPU threads. Full clips are generated before playback, so this is not streaming speech.

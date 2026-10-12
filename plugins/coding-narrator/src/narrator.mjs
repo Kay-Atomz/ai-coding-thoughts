@@ -11,7 +11,8 @@ export class Narrator extends EventEmitter {
     this.providers = providers ?? { windows: { voices, run, available: true, name: 'Windows' } };
     this.styles = styles;
     this.maxQueue = maxQueue;
-    this.settings = { muted: false, volume: 80, rate: 0, voice: voices[0]?.name ?? '', provider: 'windows', style: 'clear' };
+    const heart = this.providers.local?.available && this.providers.local.voices.some(v => v.name === 'kokoro-heart');
+    this.settings = { muted: false, volume: 80, rate: 0, voice: heart ? 'kokoro-heart' : voices[0]?.name ?? '', provider: heart ? 'local' : 'windows', style: 'clear' };
     this.queue = [];
     this.active = null;
     this.closed = false;
@@ -25,7 +26,7 @@ export class Narrator extends EventEmitter {
 
   status() {
     return {
-      state: this.closed ? 'closed' : this.settings.muted ? 'muted' : this.active ? this.active.job.phase === 'generating' ? 'preparing' : 'speaking' : 'idle',
+      state: this.closed ? 'closed' : this.settings.muted ? 'muted' : this.active ? this.active.job.phase === 'generating' ? 'preparing' : this.active.job.phase === 'waiting' ? 'waiting' : 'speaking' : 'idle',
       queued: this.queue.length, activeId: this.active?.id ?? null,
       completed: this.completed, failed: this.failed, cancelled: this.cancelled,
       lastError: this.lastError, settings: { ...this.settings }, voices: this.providers[this.settings.provider].voices,
@@ -41,7 +42,7 @@ export class Narrator extends EventEmitter {
       throw new Error('Use a nonempty plain-text update of at most 600 characters.');
     }
     if (expectedProvider !== undefined && (!['windows', 'local'].includes(expectedProvider) || this.settings.provider !== expectedProvider)) {
-      throw new Error('Offline triggers require the Windows provider.');
+      throw new Error('Offline triggers require the selected offline provider.');
     }
     if (this.settings.muted) return { accepted: false, reason: 'muted' };
     if (!this.providers[this.settings.provider].available) throw new Error('Selected voice provider is unavailable.');

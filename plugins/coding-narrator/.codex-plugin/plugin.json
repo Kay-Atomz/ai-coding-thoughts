@@ -1,6 +1,6 @@
 {
   "name": "coding-narrator",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Speak concise coding progress with local or natural voices and personal speaking skills.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",

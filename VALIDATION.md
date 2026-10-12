@@ -1,6 +1,33 @@
-# Prototype validation — updated 11 October 2026
+# Prototype validation — updated 13 October 2026
 
 No GoTo app files were edited. This is a separate Node/PowerShell project, so Flutter checks do not apply.
+
+## Version 0.2.4 shared playback and Heart default — 13 October 2026
+
+The Windows audio boundary now uses a named mutex stable across updated narrator processes/installations for the same user and Windows logon session. Actual audio is exclusive across Windows speech and generated model/OpenAI WAV playback. Model inference may remain concurrent. Heart is the new local default when installed, with Windows fallback. Hosted browser players are outside this change.
+
+Commands ran from `plugins/coding-narrator` unless stated otherwise:
+
+| Exact command | Result |
+| --- | --- |
+| `node --test test/playback-coordination.test.mjs` | Passed 2 tests with real independent Windows workers: mixed speech/WAV intervals do not overlap, abandoned-owner recovery, waiter cancellation isolation, WAV-failure release and Heart/waiting state. The later full suite also passed the added legacy one-shot device test. |
+| `npm.cmd run check` | Final run passed: 34 JavaScript files plus manifests. The C# gate also compiled and executed through the real Windows tests. |
+| `npm.cmd test` | Final run passed all 33 tests; zero failures/skips/cancellations, 24.6 seconds. |
+| `npm.cmd run check:windows` | Passed: 2 enabled voices, valid 163,158-byte file-synthesis WAV. |
+| `npm.cmd run benchmark` | Passed: previous startup/lookup 508 ms, reusable worker with gate compilation 717 ms, warm command median 0.98 ms/P90 1.13 ms, one worker process. Command overhead only, not inference/audio latency. |
+| `npm.cmd audit --omit=dev --audit-level=high` | Passed: zero vulnerabilities reported. |
+| `node scripts/check-model-coordination.mjs` | Passed: two actual independent Python workers generated Heart/Bruno (268,780/354,444 bytes); second Windows player reported waiting and monotonic playback intervals did not overlap. Device PCM explicitly silenced; no clips saved. |
+| `codex plugin add coding-narrator@coding-narrator-local` (source root) | Passed: installed 0.2.4. |
+| `codex plugin list --marketplace coding-narrator-local --json` (source root) | Verified 0.2.4 installed and enabled. |
+| `npm.cmd run package -- source` | Passed: 68-entry source ZIP, including shared C# gate, real coordination test/script and guide. Final inline Node/fflate assertions checked version/entries and exclusions. |
+
+The independent opposing reviewer ran its own two-worker silent PCM script and the coordination test (2 passed, zero failed), then reported no further actionable runtime finding in scope. Its documentation correction about the waiter/termination race was applied. [Review record](docs/CRITICAL-REVIEW.md).
+
+Deployment restarted the local demo at its actual printed URL, which selected Heart automatically. Older exact-path narrator server process trees were terminated so their pre-lock audio workers could not bypass coordination. This closed the previous chat MCP transport (the one status probe returned Transport closed); existing clients must reconnect/reopen their sessions. The updated live control service continued narration successfully. No automated Codex UI restart or hosted deployment is claimed.
+
+An inline `node --input-type=module` deployed SDK check opened two independent stdio clients, asserted server version 0.2.4 and local/kokoro-heart defaults in both, muted test clients and closed them cleanly. The live control service reported completed=1, failed=0 with Heart selected. Browser inspection confirmed the selection and saved a screenshot into the excluded `.validation` directory.
+
+The 180-second wait timeout is implemented but was not exercised as a three-minute wall-clock test. The suite's cleanup diagnostic remains expected in its injected Python cleanup-failure test. No production credential or external OpenAI account request was made.
 
 ## Version 0.2.3 selected offline voices — 11 October 2026
 

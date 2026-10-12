@@ -1,5 +1,11 @@
 # Independent critical review — 11 October 2026
 
+## Version 0.2.4 playback coordination — 13 October 2026
+
+The opposing reviewer independently ran two real Windows workers, then ran `node --test test/playback-coordination.test.mjs` (2 passed, zero failed). It verified cross-process System.Speech/WAV exclusion, abandoned-owner recovery, cancellation isolation, playback-failure release, Heart default selection and waiting state. Source review covered synchronous OS-thread ownership in the shared C# gate, the one-shot audio path, bounded waits/watchdogs, stable per-user/logon-session naming and restart requirements. No further actionable runtime findings remained in the inspected scope. One documentation correction describes the brief waiter cancellation/termination race accurately. Hosted browser audio and older pre-lock processes are explicitly outside this local guarantee.
+
+The earlier review history follows.
+
 The user requested a separate opposing reviewer. The reviewer inspected executable code and relevant documentation without editing files, reproduced findings independently, then re-reviewed the fixes. The review covered the local queue/trigger, hosted player, JWT authentication, worker lifecycle, HTTP boundaries, packaging and the new open-source voice guide. This was a bounded source and test review, not proof that every possible flaw has been found.
 
 | Finding | Severity | Resolution |

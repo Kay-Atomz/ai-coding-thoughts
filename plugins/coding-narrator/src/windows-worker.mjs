@@ -3,7 +3,8 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
 export class WindowsWorker {
-  constructor() {
+  constructor({ onStateChange = () => {} } = {}) {
+    this.onStateChange = onStateChange;
     this.child = null;
     this.pending = new Map();
     this.sequence = 0;
@@ -42,10 +43,22 @@ export class WindowsWorker {
           } else {
             const pending = this.pending.get(value.id);
             if (!pending) return;
+            if (value.type === 'state') {
+              if (!['waiting', 'playing', 'finished'].includes(value.phase) || !/^\d{1,20}$/.test(value.timestamp)) throw new Error();
+              if (value.phase !== 'finished') {
+                pending.setPhase(value.phase);
+                clearTimeout(pending.timer);
+                pending.timer = setTimeout(() => this.kill(child), value.phase === 'waiting' ? 210000 : 120000);
+                this.onStateChange({ id: value.id, phase: value.phase });
+              }
+              if (value.phase === 'playing') pending.startedAt = value.timestamp;
+              if (value.phase === 'finished') pending.finishedAt = value.timestamp;
+              return;
+            }
             this.pending.delete(value.id);
             clearTimeout(pending.timer);
             if (value.error) pending.reject(new Error('Windows playback failed. Check the audio device and voice.'));
-            else pending.resolve({ completed: true });
+            else pending.resolve({ completed: true, ...(pending.startedAt ? { playback: { startedAt: pending.startedAt, finishedAt: pending.finishedAt } } : {}) });
           }
         } catch { this.kill(child); }
       });
@@ -74,17 +87,19 @@ export class WindowsWorker {
   run = request => {
     const id = ++this.sequence;
     let cancelled = false;
+    let phase = ['speak', 'play'].includes(request.action) ? 'waiting' : 'playing';
     const done = this.start().then(() => {
       if (cancelled) return { cancelled: true };
       return new Promise((resolve, reject) => {
-        const pending = { resolve, reject, cancelled: false, timer: null };
-        pending.timer = setTimeout(() => this.kill(this.child), 120000);
+        const pending = { resolve, reject, cancelled: false, timer: null, setPhase: value => { phase = value; } };
+        pending.timer = setTimeout(() => this.kill(this.child), phase === 'waiting' ? 210000 : 120000);
         this.pending.set(id, pending);
         this.child.stdin.write(`${JSON.stringify({ ...request, id })}\n`);
       });
     });
     return {
       done,
+      get phase() { return phase; },
       cancel: () => {
         cancelled = true;
         const pending = this.pending.get(id);

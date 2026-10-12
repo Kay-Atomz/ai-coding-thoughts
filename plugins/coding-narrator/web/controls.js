@@ -33,7 +33,7 @@ function render(next) {
   state = next;
   document.body.classList.toggle('speaking', ['speaking', 'preparing'].includes(state.state));
   document.body.classList.toggle('muted', state.settings.muted);
-  const labels = { idle: 'Ready for updates', preparing: 'Preparing voice…', speaking: 'Speaking', muted: 'Narration muted', closed: 'Narrator stopped' };
+  const labels = { idle: 'Ready for updates', preparing: 'Preparing voice…', waiting: 'Waiting for another narrator…', speaking: 'Speaking', muted: 'Narration muted', closed: 'Narrator stopped' };
   element('state').textContent = labels[state.state] || 'Unknown state';
   element('toggle').setAttribute('aria-label', state.settings.muted ? 'Enable narration' : 'Mute narration');
   element('toggle').setAttribute('aria-pressed', String(state.settings.muted));

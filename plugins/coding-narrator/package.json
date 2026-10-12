@@ -1,6 +1,6 @@
 {
   "name": "coding-narrator",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "type": "module",
   "description": "Spoken progress tools with local and hosted runtimes, natural voices, and personal speaking skills.",

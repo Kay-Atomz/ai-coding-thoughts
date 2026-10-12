@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export function runWindowsSpeech(request, { timeoutMs = 120000 } = {}) {
+export function runWindowsSpeech(request, { timeoutMs = request.action === 'speak' && !request.wavePath ? 330000 : 120000 } = {}) {
   if (process.platform !== 'win32') throw new Error('Coding Narrator requires Windows.');
   const child = spawn('powershell.exe', [
     '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',

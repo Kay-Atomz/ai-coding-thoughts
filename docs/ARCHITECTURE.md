@@ -16,7 +16,7 @@ Version 0.2.3 adds an optional Python ONNX worker for four installed model voice
 
 Version 0.2.2 snapshots every update's provider, voice, volume, rate and voice direction at submission. Any provider change cancels the pending backlog; it does not redirect existing text or stop the active job. Stop and Mute cancel that active job. The hosted player saves committed volume changes through account settings, and JWT issuer validation preserves the exact configured identifier rather than URL-normalizing it.
 
-Cold Windows initialization has a 30-second deadline; each playback job has a two-minute deadline. Cancelling playback terminates the owning worker, so the next job incurs a cold start. Hosted widget assets are also cached once per server process.
+Cold Windows initialization has a 30-second deadline. Before actual audio, the worker acquires a named Windows mutex shared by this user and logon session; all acquisition, playback and release execute synchronously on one OS thread in `AudioGate.cs`. The turn waits up to three minutes and actual playback has a separate two-minute deadline. The Node wait watchdog allows 30 additional seconds for protocol/cleanup overhead. Killing an owner abandons the mutex; the next waiter safely acquires it. Killing a waiter leaves the owner alone. Errors release the turn in `finally`. The legacy one-shot default-device helper also uses the gate; file-only synthesis does not. No text, keys, audio or files are stored in the mutex. Cancelling playback terminates only the owning worker, so its next job incurs a cold start. Hosted widget assets are also cached once per server process.
 
 ## Hosted path
 
@@ -30,6 +30,7 @@ Each hosted clip is bounded and waits for complete generation. The player may re
 | --- | --- |
 | `src/narrator.mjs` | Local queue, cancellation, settings, observable status |
 | `src/windows-worker.mjs` and `scripts/speech-worker.ps1` | Reusable Windows process and audio-device lifetime |
+| `scripts/AudioGate.cs` | Cross-process playback exclusion, bounded wait and abandoned-owner recovery |
 | `src/local-voices.mjs` and `scripts/local-voice-worker.py` | Optional CPU model worker, PCM validation, generation/playback cancellation |
 | `src/realtime-voice.mjs` | Fixed OpenAI WSS integration, cancellation, bounds, PCM/WAV encoding |
 | `src/styles.mjs` | Bounded speaking profiles and SKILL.md parsing |
