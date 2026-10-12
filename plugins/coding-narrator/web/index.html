@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Coding Narrator</title><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="card">
+    <header><span class="brand"><span class="brand-dot"></span> Coding Narrator</span><span class="badge">Local voice</span></header>
+    <div class="dock-player">
+      <div class="mini-voice"><div class="halo" aria-hidden="true"></div><button id="toggle" class="orb" aria-label="Mute narration" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="toggle-icon" d="M8 5h3v14H8zm5 0h3v14h-3z"/></svg></button></div>
+      <div class="dock-status"><span id="state" role="status">Connecting…</span><span class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+      <button id="stop" class="icon-button" aria-label="Stop and clear queued audio">■</button>
+      <button id="preferences" class="icon-button" aria-label="Open narrator settings" aria-expanded="false" aria-controls="preferences-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/></svg></button>
+    </div>
+    <p id="error" role="alert"></p>
+    <section id="preferences-panel" aria-label="Narrator settings" hidden>
+    <div class="style-row"><label for="style">Speaking style</label><select id="style" aria-label="Speaking style"></select><button id="test" class="text-button">Test voice</button></div>
+    <p id="notice" class="notice">No microphone. No saved narration history.</p>
+    <details id="settings"><summary>Voice settings <span aria-hidden="true">+</span></summary>
+      <div class="settings-grid">
+        <div><label for="provider">Voice engine</label><select id="provider"></select><p id="provider-note" class="helper"></p></div>
+        <div><label for="voice">Voice</label><select id="voice"></select></div>
+        <div><label for="volume">Volume <output id="volume-value">80</output>%</label><input id="volume" type="range" min="0" max="100" value="80"></div>
+        <div><label for="rate">Speed <output id="rate-value">Normal</output></label><input id="rate" type="range" min="-10" max="10" value="0"></div>
+      </div>
+    </details>
+    <details id="skills"><summary>Add a speaking skill <span aria-hidden="true">+</span></summary>
+      <p class="helper">Speaking preferences shape the agent’s next update. They don’t change its permissions. Import a small SKILL.md or write your own.</p>
+      <label for="skill-file">Import SKILL.md</label><input id="skill-file" type="file" accept=".md,text/markdown,text/plain">
+      <form id="style-form">
+        <label for="style-name">Style name</label><input id="style-name" maxlength="48" placeholder="e.g. Friendly coach" required>
+        <label for="style-instructions">Speaking instructions</label><textarea id="style-instructions" rows="3" maxlength="2000" placeholder="Keep updates encouraging and concise. Explain one useful reason." required></textarea>
+        <div class="form-actions"><button class="small-button" type="submit">Add style</button><button class="text-button" id="export-style" type="button">Export selected skill</button></div>
+      </form>
+      <p class="helper">Styles stay in this process until it restarts. Export your skill to keep it.</p>
+    </details>
+    </section>
+    <footer><span id="metrics">Waiting for updates</span><span>Progress summaries</span></footer>
+  </main><script src="/controls.js"></script>
+</body>
+</html>
+

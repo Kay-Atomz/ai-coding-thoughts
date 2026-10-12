@@ -1,0 +1,10 @@
+{
+    "mcpServers":  {
+                       "narrator":  {
+                                        "args":  [
+                                                     "C:/Users/Public/Downloads/coding-narrator/plugins/coding-narrator/src/server.mjs"
+                                                 ],
+                                        "command":  "node"
+                                    }
+                   }
+}

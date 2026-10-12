@@ -1,0 +1,12 @@
+{
+  "name": "coding-narrator-local",
+  "interface": { "displayName": "Coding Narrator Local" },
+  "plugins": [
+    {
+      "name": "coding-narrator",
+      "source": { "source": "local", "path": "./plugins/coding-narrator" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

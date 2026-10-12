@@ -1,0 +1,29 @@
+{
+  "name": "coding-narrator",
+  "version": "0.2.3",
+  "private": true,
+  "type": "module",
+  "description": "Spoken progress tools with local and hosted runtimes, natural voices, and personal speaking skills.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "demo": "node src/server.mjs --demo",
+    "test": "node --test",
+    "check:windows": "node scripts/check-windows.mjs",
+    "start:hosted": "node src/http-server.mjs",
+    "dev:mcp": "node src/http-server.mjs --local-http",
+    "benchmark": "node scripts/benchmark.mjs",
+    "package": "node scripts/package.mjs",
+    "check": "node scripts/check-source.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "fflate": "0.8.3",
+    "jose": "6.2.12",
+    "ws": "8.22.0",
+    "yaml": "2.9.1",
+    "zod": "4.6.5"
+  }
+}

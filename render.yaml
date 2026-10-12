@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: coding-narrator
+    runtime: docker
+    plan: free
+    dockerfilePath: ./plugins/coding-narrator/Dockerfile
+    dockerContext: ./plugins/coding-narrator
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: NARRATOR_PUBLIC_ORIGIN
+        sync: false
+      - key: NARRATOR_AUTH_ISSUER
+        sync: false
+      - key: NARRATOR_AUTH_JWKS_URL
+        sync: false
+      - key: NARRATOR_AUTH_AUDIENCE
+        sync: false
+      - key: NARRATOR_ALLOWED_SUBJECTS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

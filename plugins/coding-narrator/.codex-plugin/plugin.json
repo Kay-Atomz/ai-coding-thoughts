@@ -1,0 +1,16 @@
+{
+  "name": "coding-narrator",
+  "version": "0.2.3",
+  "description": "Speak concise coding progress with local or natural voices and personal speaking skills.",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Coding Narrator",
+    "shortDescription": "Hear coding progress in your style",
+    "longDescription": "Opt-in spoken progress with an animated mini dock, Windows voices, optional natural AI voices, and personal speaking skills. Supports local MCP clients including Claude Code. Natural voice requires server-side API access. Narration history is not saved.",
+    "developerName": "Local Development",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Use Coding Narrator to narrate progress while you work on this task."]
+  }
+}

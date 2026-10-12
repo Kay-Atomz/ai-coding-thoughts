@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Coding Narrator</title><style>/* INLINE_STYLE */</style></head>
+<body><main class="card">
+<header><span class="brand"><span class="brand-dot"></span>Coding Narrator</span><span class="badge">AI voice</span></header>
+<div class="dock-player">
+<div class="mini-voice"><div class="halo" aria-hidden="true"></div><button class="orb" id="play" aria-label="Play narration"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button></div>
+<div class="dock-status"><span id="state" role="status">Connecting…</span><span class="signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+<button id="stop" class="icon-button" aria-label="Stop audio">■</button>
+<button id="preferences" class="icon-button" aria-label="Open narrator settings" aria-expanded="false" aria-controls="preferences-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/></svg></button>
+</div>
+<p id="error" role="alert"></p>
+<section id="preferences-panel" aria-label="Narrator settings" hidden>
+<div class="style-row"><label for="style">Speaking style</label><select id="style"></select></div>
+<p class="notice">Generated AI voice. Press Play to hear the latest update.</p>
+<details><summary>Voice settings <span aria-hidden="true">+</span></summary><div class="settings-grid">
+<div><label for="voice">Voice</label><select id="voice"><option value="marin">Marin</option><option value="cedar">Cedar</option></select></div>
+<div><label for="volume">Playback volume</label><input id="volume" type="range" min="0" max="100" value="80"></div>
+</div><p class="helper">Changing the voice applies to the next generated update.</p></details>
+<details><summary>Add a speaking skill <span aria-hidden="true">+</span></summary><label for="skill-file">Import SKILL.md</label><input id="skill-file" type="file" accept=".md,text/markdown,text/plain"><p class="helper">Speaking preferences only. No code execution or permission changes. Settings expire after server restart or inactivity.</p></details>
+</section><footer>Browser playback · No microphone</footer></main><script>/* INLINE_SCRIPT */</script></body></html>
