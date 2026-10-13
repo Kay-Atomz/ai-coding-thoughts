@@ -82,7 +82,7 @@ window.addEventListener('pagehide', () => {
   pending.clear();
 });
 action(async () => {
-  await request('ui/initialize', { appInfo: { name: 'Coding Narrator', version: '0.2.3' }, appCapabilities: { availableDisplayModes: ['inline'] }, protocolVersion: '2026-01-26' });
+  await request('ui/initialize', { appInfo: { name: 'Coding Narrator', version: '0.2.5' }, appCapabilities: { availableDisplayModes: ['inline'] }, protocolVersion: '2026-01-26' });
   hostReady = true;
   notify('ui/notifications/initialized');
   byId('state').textContent = audio.src ? 'Ready to play' : 'Ready for an update';

@@ -9,12 +9,37 @@ import os
 from pathlib import Path
 import sys
 import wave
+from inference_qos import responsive_inference
+
+
+def reuse_kokoro_phonemizer(model):
+    # The upstream convenience function reconstructs the eSpeak backend on
+    # every call. Reuse its public backend with identical English options.
+    from phonemizer.backend import EspeakBackend
+    from phonemizer.utils import str2list, list2str
+    from kokoro_onnx.tokenizer import _espeak_lock
+    tokenizer = model.tokenizer
+    with _espeak_lock:
+        backend = EspeakBackend('en-us', preserve_punctuation=True, with_stress=True)
+
+    def phonemize(text, lang='en-us', norm=True):
+        if lang != 'en-us':
+            raise ValueError('Unsupported language.')
+        if norm:
+            text = tokenizer.normalize_text(text)
+        lines = [line.strip(os.linesep) for line in str2list(text) if line.strip()]
+        with _espeak_lock:
+            value = list2str(backend.phonemize(lines, strip=False, njobs=1))
+        return ''.join(p for p in value if p in tokenizer.vocab).strip()
+
+    tokenizer.phonemize = phonemize
 
 MODELS = Path(sys.argv[1]).resolve()
 os.environ['HF_HOME'] = str(MODELS.parent / 'hf-cache')
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['HF_HUB_DISABLE_IMPLICIT_TOKEN'] = '1'
 os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
+os.environ['ORT_DISABLE_TELEMETRY'] = '1'
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stdin.reconfigure(encoding='utf-8')
 
@@ -42,7 +67,7 @@ def main():
         raise RuntimeError('Missing local dependencies.')
     available = {key: value for key, value in VOICES.items()
                  if all((MODELS / name).is_file() for name in FILES[value[1]])}
-    emit({'type': 'ready', 'voices': [{'name': key, 'label': value[0], 'culture': 'en-US'} for key, value in available.items()]})
+    emit({'type': 'ready', 'kokoroPrecision': 'fp32', 'voices': [{'name': key, 'label': value[0], 'culture': 'en-US'} for key, value in available.items()]})
     model = None
     loaded_engine = None
 
@@ -63,14 +88,17 @@ def main():
             engine = available[voice][1]
             speed = 2 ** (rate / 10)
             # Library output cannot contaminate the JSON protocol or leak request text.
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            with responsive_inference(), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 # Discovery stays fast; inference dependencies load only on use.
                 import numpy as np
                 import onnxruntime as ort
+                ort.disable_telemetry_events()
                 import soundfile as sf
                 options = ort.SessionOptions()
                 options.intra_op_num_threads = 4
                 options.inter_op_num_threads = 1
+                # Idle narrator sessions should not compete by spinning CPU pools.
+                options.add_session_config_entry('session.intra_op.allow_spinning', '0')
                 if loaded_engine != engine:
                     model = None
                     loaded_engine = None
@@ -80,6 +108,7 @@ def main():
                         session = ort.InferenceSession(str(MODELS / 'kokoro-v1.0.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
                         try:
                             model = Kokoro.from_session(session, str(MODELS / 'voices-v1.0.bin'))
+                            reuse_kokoro_phonemizer(model)
                         finally:
                             session = None
                     elif engine == 'kitten':

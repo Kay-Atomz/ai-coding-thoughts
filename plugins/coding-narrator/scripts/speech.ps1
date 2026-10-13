@@ -21,10 +21,12 @@ try {
         if ($taskRequest.wavePath) {
             $taskSynth.SetOutputToWaveFile([string]$taskRequest.wavePath)
         } else {
-            $taskSynth.SetOutputToDefaultAudioDevice()
+            Add-Type -AssemblyName System.Web.Extensions
+            Add-Type -Path (Join-Path $PSScriptRoot 'AudioGate.cs') -ReferencedAssemblies @([System.Speech.Synthesis.SpeechSynthesizer].Assembly.Location, [System.Media.SoundPlayer].Assembly.Location, [System.Web.Script.Serialization.JavaScriptSerializer].Assembly.Location)
         }
         # Plain text only: never evaluate input as PowerShell or SSML.
-        $taskSynth.Speak([string]$taskRequest.text)
+        if ($taskRequest.wavePath) { $taskSynth.Speak([string]$taskRequest.text) }
+        else { [NarratorAudioGate]::Speak($taskSynth, [string]$taskRequest.text, $null) }
         @{ completed = $true } | ConvertTo-Json -Compress
     } else {
         throw 'Unknown action'

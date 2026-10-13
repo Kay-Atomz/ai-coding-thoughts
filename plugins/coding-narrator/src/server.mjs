@@ -10,7 +10,7 @@ import { LocalVoices, localPlayback } from './local-voices.mjs';
 let dashboard;
 let narrator;
 let mcp;
-const worker = new WindowsWorker();
+const worker = new WindowsWorker({ onStateChange: () => narrator?.changed() });
 const local = new LocalVoices();
 let shuttingDown = false;
 async function shutdown() {
@@ -40,15 +40,18 @@ try {
       playback = worker.run({ action: 'play', audio: result.audio.toString('base64') });
       return playback.done;
     });
-    return { done, cancel: () => { abort.abort(); playback?.cancel(); } };
+    return { done, get phase() { return playback?.phase ?? 'generating'; }, cancel: () => { abort.abort(); playback?.cancel(); } };
   };
-  narrator = new Narrator({ voices, providers: {
+  narrator = new Narrator({ voices, localVoice: () => ({ warmState: local.warmState, warmupMs: local.warmupMs, precision: local.precision }), providers: {
     windows: { name: 'Windows · offline', voices, available: true, run: worker.run },
     natural: { name: 'Natural · OpenAI', voices: naturalVoices, available: natural.available, run: naturalRun },
     local: { name: 'Open-source · offline', voices: localVoices, available: localVoices.length > 0, run: localPlayback(local, worker, () => narrator?.changed()) },
   } });
-  dashboard = await startDashboard(narrator);
-  const status = () => ({ ...narrator.status(), controlPanelUrl: dashboard.url });
+  const prepare = () => {
+    if (narrator.settings.provider === 'local' && narrator.settings.voice.startsWith('kokoro-') && !narrator.settings.muted && !narrator.active) local.warmup(() => narrator?.changed());
+  };
+  dashboard = await startDashboard(narrator, { onUse: prepare });
+  const status = () => { prepare(); return { ...narrator.status(), controlPanelUrl: dashboard.url }; };
   const result = value => ({ content: [{ type: 'text', text: JSON.stringify(value) }] });
   const invoke = fn => async args => {
     try { return result(fn(args)); }
@@ -60,7 +63,7 @@ try {
   if (process.argv.includes('--demo')) {
     process.stdout.write(`${JSON.stringify({ controlPanelUrl: dashboard.url })}\n`);
   } else {
-    mcp = new McpServer({ name: 'coding-narrator', version: '0.2.3' }, {
+    mcp = new McpServer({ name: 'coding-narrator', version: '0.2.5' }, {
       instructions: 'Use speech only when requested. Speak concise user-facing coding progress, never hidden reasoning, credentials, private URLs or raw file content. Queued audio is not proof that the user heard it.',
     });
     mcp.registerTool('speak_update', {
@@ -99,6 +102,8 @@ try {
     await mcp.connect(new StdioServerTransport());
     process.stdin.once('end', shutdown);
   }
+  // Unused MCP connections retain only the tiny catalog worker. Explicit
+  // status/control use starts silent warmup; it never saves or plays a clip.
   process.once('SIGINT', shutdown);
   process.once('SIGTERM', shutdown);
     process.once('exit', () => { narrator?.close(); local.close(); worker.close(); });

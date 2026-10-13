@@ -14,9 +14,11 @@ An independent local trigger can submit safe summaries or fixed Claude event ann
 
 Version 0.2.3 adds an optional Python ONNX worker for four installed model voices. It loads one engine at a time, caps inference at four CPU threads, keeps the selected engine warm and synthesizes PCM16 mono WAV in memory. The Node boundary validates the WAV chunks before Windows playback. Generation has a 120-second deadline, a 65-second audio limit and a 3 MiB size cap. Stop terminates an active generation process; cancellation during playback retains the idle model. Shutdown closes both workers. The dock reports preparation separately from playback; its animation indicates activity rather than audio amplitude. No automatic model downloads or cloud fallback occur during speech. See [setup](LOCAL-VOICES.md).
 
+Version 0.2.5 adds background Heart warmup, cached public eSpeak backend reuse, disabled idle thread spinning and incremental local playback. `speech-segments.mjs` preserves the supplied words, prefers sentence/clause boundaries and limits the initial segment to eight words. Later segments are larger; splitting can affect prosody. The producer generates at most one segment ahead. `AudioGate.PlayStream` acquires once and retains ownership across every segment and input gap, with bounded cumulative bytes/duration/count. Late errors cancel inference and the device stream and count as failures. Request-to-playback, first-chunk, queue wait, generation and audio timings remain separate from the full active-job duration. See [performance](VOICE-PERFORMANCE.md).
+
 Version 0.2.2 snapshots every update's provider, voice, volume, rate and voice direction at submission. Any provider change cancels the pending backlog; it does not redirect existing text or stop the active job. Stop and Mute cancel that active job. The hosted player saves committed volume changes through account settings, and JWT issuer validation preserves the exact configured identifier rather than URL-normalizing it.
 
-Cold Windows initialization has a 30-second deadline; each playback job has a two-minute deadline. Cancelling playback terminates the owning worker, so the next job incurs a cold start. Hosted widget assets are also cached once per server process.
+Cold Windows initialization has a 30-second deadline. Before actual audio, the worker acquires a named Windows mutex shared by this user and logon session; all acquisition, playback and release execute synchronously on one OS thread in `AudioGate.cs`. The turn waits up to three minutes and actual playback has a separate two-minute deadline. The Node wait watchdog allows 30 additional seconds for protocol/cleanup overhead. Killing an owner abandons the mutex; the next waiter safely acquires it. Killing a waiter leaves the owner alone. Errors release the turn in `finally`. The legacy one-shot default-device helper also uses the gate; file-only synthesis does not. No text, keys, audio or files are stored in the mutex. Cancelling playback terminates only the owning worker, so its next job incurs a cold start. Hosted widget assets are also cached once per server process.
 
 ## Hosted path
 
@@ -30,6 +32,7 @@ Each hosted clip is bounded and waits for complete generation. The player may re
 | --- | --- |
 | `src/narrator.mjs` | Local queue, cancellation, settings, observable status |
 | `src/windows-worker.mjs` and `scripts/speech-worker.ps1` | Reusable Windows process and audio-device lifetime |
+| `scripts/AudioGate.cs` | Cross-process playback exclusion, bounded wait and abandoned-owner recovery |
 | `src/local-voices.mjs` and `scripts/local-voice-worker.py` | Optional CPU model worker, PCM validation, generation/playback cancellation |
 | `src/realtime-voice.mjs` | Fixed OpenAI WSS integration, cancellation, bounds, PCM/WAV encoding |
 | `src/styles.mjs` | Bounded speaking profiles and SKILL.md parsing |

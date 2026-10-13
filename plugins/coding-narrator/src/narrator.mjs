@@ -4,14 +4,16 @@ import { performance } from 'node:perf_hooks';
 import { Styles } from './styles.mjs';
 
 export class Narrator extends EventEmitter {
-  constructor({ voices, run = runWindowsSpeech, maxQueue = 5, providers, styles = new Styles() }) {
+  constructor({ voices, run = runWindowsSpeech, maxQueue = 5, providers, styles = new Styles(), localVoice = () => null }) {
     super();
     this.voices = voices;
     this.run = run;
     this.providers = providers ?? { windows: { voices, run, available: true, name: 'Windows' } };
     this.styles = styles;
     this.maxQueue = maxQueue;
-    this.settings = { muted: false, volume: 80, rate: 0, voice: voices[0]?.name ?? '', provider: 'windows', style: 'clear' };
+    this.localVoice = localVoice;
+    const heart = this.providers.local?.available && this.providers.local.voices.some(v => v.name === 'kokoro-heart');
+    this.settings = { muted: false, volume: 80, rate: 0, voice: heart ? 'kokoro-heart' : voices[0]?.name ?? '', provider: heart ? 'local' : 'windows', style: 'clear' };
     this.queue = [];
     this.active = null;
     this.closed = false;
@@ -21,17 +23,20 @@ export class Narrator extends EventEmitter {
     this.cancelled = 0;
     this.lastError = null;
     this.lastDurationMs = null;
+    this.lastTimings = null;
   }
 
   status() {
     return {
-      state: this.closed ? 'closed' : this.settings.muted ? 'muted' : this.active ? this.active.job.phase === 'generating' ? 'preparing' : 'speaking' : 'idle',
+      state: this.closed ? 'closed' : this.settings.muted ? 'muted' : this.active ? this.active.job.phase === 'generating' ? 'preparing' : this.active.job.phase === 'waiting' ? 'waiting' : 'speaking' : 'idle',
       queued: this.queue.length, activeId: this.active?.id ?? null,
       completed: this.completed, failed: this.failed, cancelled: this.cancelled,
       lastError: this.lastError, settings: { ...this.settings }, voices: this.providers[this.settings.provider].voices,
       providers: Object.entries(this.providers).map(([id, value]) => ({ id, name: value.name, available: value.available })),
       styles: this.styles.list(), narrationStyle: this.styles.get(this.settings.style),
       lastDurationMs: this.lastDurationMs,
+      lastTimings: this.lastTimings,
+      localVoice: this.localVoice(),
     };
   }
 
@@ -41,7 +46,7 @@ export class Narrator extends EventEmitter {
       throw new Error('Use a nonempty plain-text update of at most 600 characters.');
     }
     if (expectedProvider !== undefined && (!['windows', 'local'].includes(expectedProvider) || this.settings.provider !== expectedProvider)) {
-      throw new Error('Offline triggers require the Windows provider.');
+      throw new Error('Offline triggers require the selected offline provider.');
     }
     if (this.settings.muted) return { accepted: false, reason: 'muted' };
     if (!this.providers[this.settings.provider].available) throw new Error('Selected voice provider is unavailable.');
@@ -50,7 +55,7 @@ export class Narrator extends EventEmitter {
     const id = ++this.sequence;
     const settings = { ...this.settings };
     const voiceDirection = this.styles.get(settings.style).voiceDirection;
-    this.queue.push({ id, text: text.trim(), expectedProvider, settings, voiceDirection });
+    this.queue.push({ id, text: text.trim(), expectedProvider, settings, voiceDirection, queuedAt: performance.now() });
     this.pump();
     this.changed();
     return { accepted: true, id, state: 'queued' };
@@ -129,6 +134,10 @@ export class Narrator extends EventEmitter {
     this.changed();
     // Release narration text after submitting it; status never returns text.
     job.done.then(result => {
+      if (result.metrics) {
+        const queueWaitMs = Math.round(started - entry.queuedAt);
+        this.lastTimings = { ...result.metrics, queueWaitMs, requestToPlaybackMs: result.metrics.playbackStartMs === null ? null : queueWaitMs + result.metrics.playbackStartMs };
+      }
       if (!active.stopped && !result.cancelled) {
         this.completed++;
         this.lastError = null;

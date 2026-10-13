@@ -33,8 +33,12 @@ function render(next) {
   state = next;
   document.body.classList.toggle('speaking', ['speaking', 'preparing'].includes(state.state));
   document.body.classList.toggle('muted', state.settings.muted);
-  const labels = { idle: 'Ready for updates', preparing: 'Preparing voice…', speaking: 'Speaking', muted: 'Narration muted', closed: 'Narrator stopped' };
+  const labels = { idle: 'Ready for updates', preparing: 'Preparing voice…', waiting: 'Waiting for another narrator…', speaking: 'Speaking', muted: 'Narration muted', closed: 'Narrator stopped' };
   element('state').textContent = labels[state.state] || 'Unknown state';
+  if (state.state === 'idle' && state.settings.provider === 'local' && state.localVoice?.warmState === 'warming') element('state').textContent = 'Warming Heart…';
+  const timing = state.lastTimings;
+  element('latency').hidden = !timing || state.settings.provider !== 'local';
+  element('latency').textContent = timing ? `Last playback started in ${timing.requestToPlaybackMs ?? timing.playbackStartMs ?? '—'} ms · Audio ${Math.round(timing.audioMs / 1000)} s · Total ${Math.round(((state.lastDurationMs ?? 0) + (timing.queueWaitMs ?? 0)) / 1000)} s` : '';
   element('toggle').setAttribute('aria-label', state.settings.muted ? 'Enable narration' : 'Mute narration');
   element('toggle').setAttribute('aria-pressed', String(state.settings.muted));
   element('toggle-icon').setAttribute('d', state.settings.muted ? 'M8 5v14l11-7z' : 'M8 5h3v14H8zm5 0h3v14h-3z');
@@ -49,7 +53,7 @@ function render(next) {
   element('metrics').textContent = state.queued ? state.queued + ' queued' : state.completed + ' updates spoken';
   element('error').textContent = actionError || state.lastError || '';
   element('provider-note').textContent = state.settings.provider === 'local'
-    ? 'These voices run on your computer. The first update loads the model; following updates reuse it. No cloud fallback.'
+    ? 'Heart warms in the background. Playback starts with the first segment while the next is prepared. No cloud fallback.'
     : state.settings.provider === 'natural'
       ? 'Natural speech sends each safe update to OpenAI. API usage is billed.'
       : 'Windows works offline. Open-source voices require the optional local installation.';

@@ -19,7 +19,7 @@ export async function startHostedServer({ local = false, port = 0, auth, voicePr
     const json = (code, value) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
     if (req.headers.host !== (expectedHost ?? boundHost)) return json(403, { error: 'Invalid host.' });
     const pathname = req.url?.split('?')[0];
-    if (req.method === 'GET' && pathname === '/health') return json(200, { status: 'ok', version: '0.2.3', naturalVoiceConfigured: voiceProvider.available });
+    if (req.method === 'GET' && pathname === '/health') return json(200, { status: 'ok', version: '0.2.5', naturalVoiceConfigured: voiceProvider.available });
     if (req.method === 'GET' && pathname === '/.well-known/oauth-protected-resource' && auth) return json(200, auth.metadata);
     if (pathname !== '/mcp') return json(404, { error: 'Not found.' });
     if (req.method !== 'POST') return json(405, { error: 'Use MCP POST requests.' });

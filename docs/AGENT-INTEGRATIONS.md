@@ -20,7 +20,7 @@ Start a new Claude Code session and check `/mcp`. Ask:
 
 > Use Coding Narrator's MCP tools to speak short progress summaries while you work. Check narrator_status, select the caveman style, and open its control panel. Continue coding after each queue acknowledgement.
 
-Other clients can use `node` with the absolute path to `plugins/coding-narrator/src/server.mjs` as a stdio server. A hosted agent running on a different computer cannot play through this Windows computer without a separate authenticated connection. Use one local narrator process at a time to avoid overlapping voices across clients.
+Other clients can use `node` with the absolute path to `plugins/coding-narrator/src/server.mjs` as a stdio server. A hosted agent running on a different computer cannot play through this Windows computer without a separate authenticated connection. Updated local narrator processes in the same user's Windows logon session share one playback turn, so different clients and voice engines cannot overlap. Restart older narrator processes after upgrading. Each client's Stop/Mute remains independent. The turn is exclusive, but not a strict combined FIFO queue; see [coordination](PLAYBACK-COORDINATION.md).
 
 ## Independent offline triggers
 

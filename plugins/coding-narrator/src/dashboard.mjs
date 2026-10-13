@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 
-export async function startDashboard(narrator) {
+export async function startDashboard(narrator, { onUse = () => {} } = {}) {
   const html = await readFile(new URL('../web/index.html', import.meta.url));
   const script = await readFile(new URL('../web/controls.js', import.meta.url));
   const css = await readFile(new URL('../web/styles.css', import.meta.url));
@@ -26,6 +26,7 @@ export async function startDashboard(narrator) {
     if (req.headers.origin && req.headers.origin !== origin) return reply(403, { error: 'Use the local control panel.' });
     if (req.headers['sec-fetch-site'] === 'cross-site') return reply(403, { error: 'Cross-site access is not allowed.' });
     if (req.method === 'GET') {
+      if (['/', '/status', '/events'].includes(req.url)) onUse();
       if (req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         return res.end(html);
