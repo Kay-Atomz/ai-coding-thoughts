@@ -33,7 +33,7 @@ Kokoro Heart is the default for a new local runtime when its files/modules are d
 
 ## Performance and controls
 
-The first clip needs model loading. The dock shows **Preparing voice…** before device playback. A single Python worker keeps one engine warm; switching between Heart and Bella reuses Kokoro, while switching engines releases the previous model. All three engines use four CPU threads. Full clips are generated before playback, so this is not streaming speech.
+Heart warms silently on first status/control use; unused agent connections do not load it. The dock shows **Warming Heart…** during idle warmup and **Preparing voice…** for an active request. A single Python worker keeps one engine warm; switching between Heart and Bella reuses Kokoro, while switching engines releases the previous model. All three engines use four CPU threads with idle spinning disabled. A short initial segment plays while the next is prepared, with one shared turn retained across the complete update. See [latency and measurements](VOICE-PERFORMANCE.md).
 
 Volume and speed affect synthesis; Stop cancels generation or playback and clears the queue. Cancellation during generation terminates that worker; the next update creates a new one. Stop during playback retains the idle model. Mute also cancels current and pending work. Requests are limited to 600 characters, 120 seconds of generation, 65 seconds of audio and 3 MiB of WAV data. Queue limits remain unchanged. The runtime saves no narration history or generated clips.
 

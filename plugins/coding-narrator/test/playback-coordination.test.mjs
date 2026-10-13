@@ -77,7 +77,7 @@ test('independent Windows processes serialize speech and WAVs, recover abandoned
 
 test('Heart is the installed default and generated providers expose waiting without losing cancellation', async () => {
   let phase = 'waiting', resolve;
-  const playback = { get phase() { return phase; }, done: new Promise(yes => { resolve = yes; }), cancel: () => resolve({ cancelled: true }) };
+  const playback = { get phase() { return phase; }, finish: async () => {}, done: new Promise(yes => { resolve = yes; }), cancel: () => resolve({ cancelled: true }) };
   const run = localPlayback({ generate: () => ({ done: Promise.resolve({ audio: silentWave() }), cancel() {} }) }, { run: () => playback });
   const voices = [{ name: 'kokoro-heart' }, { name: 'kitten-bruno' }];
   const narrator = new Narrator({ voices: [{ name: 'Windows fixture' }], providers: {

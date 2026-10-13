@@ -10,6 +10,7 @@ const version = JSON.parse(await readFile(join(plugin, 'package.json'), 'utf8'))
 const archive = {};
 async function collect(root, directory, prefix = '') {
   for (const entry of await readdir(join(root, directory), { withFileTypes: true })) {
+    if (entry.name === '__pycache__' || entry.name.endsWith('.pyc')) continue;
     if (entry.isSymbolicLink()) throw new Error('Symlinks are not allowed in the package.');
     const path = join(directory, entry.name);
     if (entry.isDirectory()) await collect(root, path, prefix);
@@ -45,7 +46,7 @@ if (mode === 'source') {
 } else throw new Error('Choose source or chatgpt mode.');
 
 for (const path of Object.keys(archive)) {
-  if (path.split('/').some(part => part === '..' || part === 'node_modules' || part.startsWith('.env')) || /\.(wav|log)$/i.test(path)) throw new Error('Unsafe archive entry rejected.');
+  if (path.split('/').some(part => part === '..' || part === 'node_modules' || part === '__pycache__' || part.startsWith('.env')) || /\.(wav|log|pyc)$/i.test(path)) throw new Error('Unsafe archive entry rejected.');
 }
 const bytes = zipSync(archive, { level: 6 });
 const verified = unzipSync(bytes);

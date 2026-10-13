@@ -1,6 +1,6 @@
 {
   "name": "coding-narrator",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "type": "module",
   "description": "Spoken progress tools with local and hosted runtimes, natural voices, and personal speaking skills.",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/server.mjs",
     "demo": "node src/server.mjs --demo",
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
     "check:windows": "node scripts/check-windows.mjs",
     "start:hosted": "node src/http-server.mjs",
     "dev:mcp": "node src/http-server.mjs --local-http",

@@ -1,5 +1,11 @@
 # Independent critical review — 11 October 2026
 
+## Version 0.2.5 incremental playback — 13 October 2026
+
+The opposing reviewer independently tested the new stream gate with two real Windows workers: ownership remained held across an input gap and multiple clips, cancelling during an input gap released the turn, and a malformed later clip failed safely. Its final command, `node --test test/incremental-speech.test.mjs test/local-voices.test.mjs test/narrator.test.mjs`, passed 18 tests with zero failures. Source review checked one-segment lookahead/backpressure, cumulative audio limits, late-error propagation, warmup cancellation/restart, activation-only warming and stage timing semantics.
+
+The cache helper was corrected to match the public phonemizer's platform-specific line handling; the reviewer independently matched five technical/multiline samples. It also verified that inference QoS changes affect only its own process and restore the previous policy after normal and exceptional exits. Review prompted checking the restoration result; failure now emits a static diagnostic and terminates the worker rather than retaining that policy while idle. Universal voice-quality/prosody equivalence is not claimed. The final re-review found no further actionable flaws within the inspected scope.
+
 ## Version 0.2.4 playback coordination — 13 October 2026
 
 The opposing reviewer independently ran two real Windows workers, then ran `node --test test/playback-coordination.test.mjs` (2 passed, zero failed). It verified cross-process System.Speech/WAV exclusion, abandoned-owner recovery, cancellation isolation, playback-failure release, Heart default selection and waiting state. Source review covered synchronous OS-thread ownership in the shared C# gate, the one-shot audio path, bounded waits/watchdogs, stable per-user/logon-session naming and restart requirements. No further actionable runtime findings remained in the inspected scope. One documentation correction describes the brief waiter cancellation/termination race accurately. Hosted browser audio and older pre-lock processes are explicitly outside this local guarantee.

@@ -4,7 +4,8 @@ $ErrorActionPreference = 'Stop'
 $taskSynth = $null
 try {
     Add-Type -AssemblyName System.Speech
-    Add-Type -Path (Join-Path $PSScriptRoot 'AudioGate.cs') -ReferencedAssemblies @([System.Speech.Synthesis.SpeechSynthesizer].Assembly.Location, [System.Media.SoundPlayer].Assembly.Location)
+    Add-Type -AssemblyName System.Web.Extensions
+    Add-Type -Path (Join-Path $PSScriptRoot 'AudioGate.cs') -ReferencedAssemblies @([System.Speech.Synthesis.SpeechSynthesizer].Assembly.Location, [System.Media.SoundPlayer].Assembly.Location, [System.Web.Script.Serialization.JavaScriptSerializer].Assembly.Location)
     $taskSynth = New-Object System.Speech.Synthesis.SpeechSynthesizer
     $taskVoices = @($taskSynth.GetInstalledVoices() | Where-Object { $_.Enabled } | ForEach-Object {
         @{ name = $_.VoiceInfo.Name; culture = $_.VoiceInfo.Culture.Name }
@@ -26,6 +27,8 @@ try {
                 $taskSynth.Rate = [int]$taskRequest.rate
                 $taskSynth.SelectVoice([string]$taskRequest.voice)
                 [NarratorAudioGate]::Speak($taskSynth, [string]$taskRequest.text, [long]$taskRequest.id)
+            } elseif ($taskRequest.action -eq 'stream_start') {
+                [NarratorAudioGate]::PlayStream([string]$taskRequest.audio, [long]$taskRequest.id)
             } elseif ($taskRequest.action -eq 'play') {
                 if ($taskRequest.audio.Length -gt 4500000) { throw 'Audio too large' }
                 $taskBytes = [Convert]::FromBase64String([string]$taskRequest.audio)

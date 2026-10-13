@@ -2,6 +2,43 @@
 
 No GoTo app files were edited. This is a separate Node/PowerShell project, so Flutter checks do not apply.
 
+## Version 0.2.5 playback-start performance — 13 October 2026
+
+Incremental local playback synthesizes a short first segment while preparing later segments during playback. It retains one shared Windows turn across the complete update, including generation gaps. Heart warms silently on explicit status/control use; unused MCP connections do not load duplicate models. The full-precision model and public phonemizer remain in use. The controls now separate preparation, playback start, audio duration and total duration. The earlier 26,027 ms status value was total job duration, not a measured silent wait; it is not a comparable before/after startup benchmark.
+
+Commands ran from `plugins/coding-narrator` unless stated otherwise:
+
+| Exact command | Result |
+| --- | --- |
+| `npm.cmd run check` | Passed: 37 JavaScript files and manifests. |
+| `npm.cmd test` | Final run passed 39 tests, zero failures/skips/cancellations, 42.1 seconds. Test files run serially because the real audio checks intentionally share a device gate. |
+| `npm.cmd run check:windows` | Passed: 2 enabled voices, valid 163,158-byte file-synthesis WAV. |
+| `npm.cmd audit --omit=dev --audit-level=high` | Passed: zero vulnerabilities reported. |
+| `node scripts/check-local-voices.mjs --silent-playback` | Passed all four real-model generations, Windows playback, generation/process-tree cancellation and restart, playback cancellation/restart, volume-zero and rate checks. Heart/Bella/Bruno/Piper generated 213,898/221,676/368,444/218,156 bytes in 4,887/2,202/2,486/6,883 ms. Source PCM was non-silent; only device PCM was silenced. |
+| `node scripts/benchmark-local-latency.mjs` | Final run completed real synthesis and silent device playback, separately from audio tests; results below. A separate generator measures the cold reference so the silent warmup really executes. |
+| `node --test test/incremental-speech.test.mjs test/local-voices.test.mjs test/narrator.test.mjs` | Independent opposing reviewer: 18 passed, zero failed; includes holding the cross-process turn across gaps and recovering after cancellation/late failure. |
+| `codex plugin add coding-narrator@coding-narrator-local` (source root) | Passed: installed 0.2.5. |
+| `codex plugin list --marketplace coding-narrator-local --json` (source root) | Verified installed and enabled version 0.2.5. |
+| `npm.cmd run package -- source` | Passed: 73-entry source ZIP. Inline Node/fflate assertions verified version, performance helpers/tests and exclusion of models, environments, generated clips, local configuration and bytecode. |
+
+Final benchmark on this Windows laptop, with no other audio test holding the turn:
+
+| Case | Submit call | First prepared clip | Playback call start | Audio length | Full job |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Warm five-word update | 0.96 ms | 741 ms | 795 ms | 1,591 ms | 3,373 ms |
+| Warm 28-word update, 3 segments | 0.07 ms | 981 ms | 990 ms | 10,071 ms | 13,847 ms |
+| Warm five-word repeat | 0.28 ms | 663 ms | 671 ms | 1,591 ms | 2,519 ms |
+
+The separate cold full-message generation took 6,700 ms; actual silent startup warmup took 3,459 ms. These are one-run observations rather than latency guarantees. Playback start is measured at the Windows playback call, without microphone verification of audible onset. Spoken audio cannot finish in milliseconds at normal speed. Cold loads, memory/CPU pressure, engine switches and another agent's turn still add latency. Short segments preserve every word but may alter cadence; no subjective quality equivalence is claimed.
+
+The reviewer independently verified five representative phonemizer samples against the original backend and checked that the own-process inference scheduling context restores its previous policy after normal and exceptional exits. A restoration failure now terminates that worker with a static diagnostic. No system power plan or other process is modified. [Performance details](docs/VOICE-PERFORMANCE.md) and [review record](docs/CRITICAL-REVIEW.md).
+
+Deployment restarted `node src/server.mjs --demo` on its actual printed loopback URL. Browser inspection exercised Test voice with the default Kokoro Heart: the final status reported completed=1, failed=0, first clip=503 ms, request-to-playback=576 ms, speech=4,060 ms and full job=5,622 ms. Silent warmup took 3,898 ms. The panel correctly displayed the separate timings; screenshot saved as `.validation/narrator-0.2.5-latency.png` (excluded from the source archive). This proves runtime completion and the playback-call boundary, not that the user heard it.
+
+Corrections and exploratory failures: an early full-suite run concurrent with a heavy model benchmark had one 60-second cancellation (36 passed); tests now run serially and final benchmarks run separately. Earlier low-memory measurements had warm starts around 1.5–3.3 seconds. Retiring six exact-path older narrator process trees and avoiding automatic model warmup in unused connections released roughly 2 GB of RAM. An experimental INT8 model was slower locally and was rejected; an isolated DirectML trial failed at ConvTranspose with error 80070057 on this GPU and was rejected. Neither experimental runtime/model is enabled or packaged. An earlier benchmark accidentally reused an already-warm generator for the warmup measurement; it was corrected before the final run. One later repeat waited behind the reviewer's real audio test (4,275 ms start versus 902 ms prepared clip), demonstrating the deliberate shared-turn delay; it is excluded from the uncontended table above. Two documentation reads used incorrect validation paths and were corrected; they made no changes.
+
+The expected cleanup diagnostic in the injected cleanup-failure regression is not a live runtime failure. Live OpenAI speech, Docker/ChatGPT hosting, clean-computer installation and a live Claude model-task narration test remain unverified. Existing chat transports need reconnecting after retiring their older server processes; installation does not reload a running chat automatically.
+
 ## Version 0.2.4 shared playback and Heart default — 13 October 2026
 
 The Windows audio boundary now uses a named mutex stable across updated narrator processes/installations for the same user and Windows logon session. Actual audio is exclusive across Windows speech and generated model/OpenAI WAV playback. Model inference may remain concurrent. Heart is the new local default when installed, with Windows fallback. Hosted browser players are outside this change.

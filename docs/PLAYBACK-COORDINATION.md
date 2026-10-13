@@ -8,6 +8,8 @@ Stop or Mute cancels only that session's current/waiting job and pending queue. 
 
 The gate lives in `scripts/AudioGate.cs`, called by both Windows worker speech and generated WAV playback, plus legacy default-device speech. Acquisition, audio and release happen on one OS thread, as required by [Microsoft's mutex documentation](https://learn.microsoft.com/en-us/dotnet/standard/threading/mutexes). Its name is stable across plugin versions and installation paths and scoped by the current Windows user and logon session. It stores no narration history, audio or credentials.
 
+Version 0.2.5 starts local model playback incrementally. The shared turn is held across all segments and synthesis gaps; another agent cannot speak between segments. A later generation failure stops the partial update, records failure and releases the turn. See [latency](VOICE-PERFORMANCE.md).
+
 ## Updating
 
 Install 0.2.4, then restart narrator runtimes in existing Codex/Claude sessions. An already running older Node process does not gain the new protocol or lock by replacing source files. New runtimes use Kokoro Heart by default when installed and Windows otherwise. The controls expose the selected provider/voice.

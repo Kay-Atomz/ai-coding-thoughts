@@ -21,7 +21,8 @@ try {
         if ($taskRequest.wavePath) {
             $taskSynth.SetOutputToWaveFile([string]$taskRequest.wavePath)
         } else {
-            Add-Type -Path (Join-Path $PSScriptRoot 'AudioGate.cs') -ReferencedAssemblies @([System.Speech.Synthesis.SpeechSynthesizer].Assembly.Location, [System.Media.SoundPlayer].Assembly.Location)
+            Add-Type -AssemblyName System.Web.Extensions
+            Add-Type -Path (Join-Path $PSScriptRoot 'AudioGate.cs') -ReferencedAssemblies @([System.Speech.Synthesis.SpeechSynthesizer].Assembly.Location, [System.Media.SoundPlayer].Assembly.Location, [System.Web.Script.Serialization.JavaScriptSerializer].Assembly.Location)
         }
         # Plain text only: never evaluate input as PowerShell or SSML.
         if ($taskRequest.wavePath) { $taskSynth.Speak([string]$taskRequest.text) }

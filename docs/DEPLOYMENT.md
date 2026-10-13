@@ -1,6 +1,6 @@
 # Personal ChatGPT deployment
 
-Version 0.2.4 has two real runtimes. The local Windows runtime queues speech to the computer's audio device. The hosted runtime implements streamable HTTP MCP and returns natural audio plus a compact browser player. Hosted speech waits for generation, and the browser may require Play for each clip. It does not intercept every assistant message or read private internal reasoning.
+Version 0.2.5 has two real runtimes. The local Windows runtime queues speech to the computer's audio device. The hosted runtime implements streamable HTTP MCP and returns natural audio plus a compact browser player. Hosted speech waits for generation, and the browser may require Play for each clip. It does not intercept every assistant message or read private internal reasoning.
 
 ## Free hosting choice
 
@@ -33,7 +33,7 @@ Keep actual secrets, private account IDs, tokens and production configuration ou
 1. Put the source project in your own private Git repository and connect it to a Render account.
 2. Create a Free web service from the blueprint, or select Docker with context `plugins/coding-narrator` and Dockerfile `plugins/coding-narrator/Dockerfile`.
 3. Set the actual HTTPS origin and authentication values above. Set the API key using the host's secure secret input. Configure spending limits in your API project.
-4. Deploy. Check `/health` returns version 0.2.4 and that `/mcp` without authorization returns 401 with a protected-resource discovery challenge.
+4. Deploy. Check `/health` returns version 0.2.5 and that `/mcp` without authorization returns 401 with a protected-resource discovery challenge.
 5. Confirm `/.well-known/oauth-protected-resource` advertises your configured authorization server and `narrate` scope. Verify the provider's authorization-server metadata is reachable and client registration works before linking ChatGPT.
 
 Do not run `--local-http` on a public host. That mode binds only `127.0.0.1` for SDK tests and trusted development. The normal hosted entrypoint binds the container listener and requires authentication on every MCP request. TLS terminates at Render's managed HTTPS edge; keep the container port internal.

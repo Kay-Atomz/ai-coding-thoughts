@@ -50,6 +50,39 @@ test('local synthesis reuses one worker, bounds protocol and cancels before rest
   } finally { worker.close(); await flush(); }
 });
 
+test('silent warmup runs once and a real request waits without a busy error', async () => {
+  const { worker, children, requests, audio, reply } = fixture();
+  try {
+    await worker.start();
+    const warm = worker.warmup();
+    assert.equal(worker.warmup(), warm);
+    const user = worker.generate({ text: 'An actual update.', voice: 'kokoro-heart', volume: 70, rate: 0 });
+    await flush(); assert.equal(requests.length, 1); assert.equal(requests[0].volume, 0);
+    reply(children[0], { id: requests[0].id, audio: audio.toString('base64') });
+    await warm; await flush(); assert.equal(requests.length, 2);
+    reply(children[0], { id: requests[1].id, audio: audio.toString('base64') });
+    assert.deepEqual((await user.done).audio, audio); assert.equal(worker.warmState, 'ready');
+    const other = worker.generate({ text: 'Another engine.', voice: 'kitten-bruno', volume: 70, rate: 0 });
+    await flush(); reply(children[0], { id: requests[2].id, audio: audio.toString('base64') });
+    await other.done; assert.equal(worker.warmState, 'cold');
+  } finally { await worker.close(); }
+});
+
+test('Stop while waiting for warmup cancels the warm process and permits a clean restart', async () => {
+  const { worker, children, requests, audio, reply } = fixture();
+  try {
+    await worker.start(); const warm = worker.warmup();
+    const user = worker.generate({ text: 'An update.', voice: 'kokoro-heart', volume: 70, rate: 0 });
+    await flush(); user.cancel();
+    assert.equal((await user.done).cancelled, true); await warm;
+    assert.equal(worker.warmState, 'cold');
+    const next = worker.generate({ text: 'After stop.', voice: 'kokoro-heart', volume: 70, rate: 0 });
+    await flush(); assert.equal(children.length, 2);
+    reply(children[1], { id: requests.at(-1).id, audio: audio.toString('base64') });
+    assert.deepEqual((await next.done).audio, audio);
+  } finally { await worker.close(); }
+});
+
 test('Windows cancellation targets the owned Python tree and waits for closure', { skip: process.platform !== 'win32' }, async () => {
   let command;
   const setup = fixture({ killTree(file, args, options, callback) {
@@ -98,13 +131,13 @@ test('local playback waits for generation, reports preparation, and cancels devi
   let resolve;
   let generationCancelled = 0, playbackCancelled = 0, played = 0;
   const generation = { done: new Promise(yes => { resolve = yes; }), cancel() { generationCancelled++; } };
-  const playback = { done: Promise.resolve({ completed: true }), cancel() { playbackCancelled++; } };
+  const playback = { done: Promise.resolve({ completed: true }), finish: async () => {}, cancel() { playbackCancelled++; } };
   const run = localPlayback({ generate: () => generation }, { run: () => { played++; return playback; } });
-  const job = run({});
+  const job = run({ text: 'A test sentence.' });
   assert.equal(job.phase, 'generating');
   assert.equal(played, 0);
-  resolve({ audio: Buffer.from('test audio') });
-  assert.deepEqual(await job.done, { completed: true });
+  resolve({ audio: fixture().audio });
+  assert.equal((await job.done).completed, true);
   assert.equal(job.phase, 'playing');
   job.cancel();
   assert.equal(generationCancelled, 1);
